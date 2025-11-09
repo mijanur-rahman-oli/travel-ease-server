@@ -76,6 +76,18 @@ async function run() {
     });
 
 
+        app.get("/latest-vehicles", async (req, res) => {
+      const result = await vehicleCollection
+        .find()
+        .sort({ createdAt: "desc" })
+        .limit(6)
+        .toArray();
+
+      console.log(result);
+
+      res.send(result);
+    });
+
 
 
 
