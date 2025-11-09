@@ -25,6 +25,14 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const db = client.db('travelEase')
+    const vehicleCollection = db.collection('vehicles')
+
+      app.get("/vehicles", async (req, res) => {
+      const result = await vehicleCollection.find().toArray();
+      res.send(result);
+    });
+
 
 
 
