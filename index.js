@@ -28,11 +28,22 @@ async function run() {
     const db = client.db('travelEase')
     const vehicleCollection = db.collection('vehicles')
 
-      app.get("/vehicles", async (req, res) => {
+
+    // get
+    app.get("/vehicles", async (req, res) => {
       const result = await vehicleCollection.find().toArray();
       res.send(result);
     });
 
+    // post
+    app.post("/vehicles", async (req, res) => {
+      const data = req.body;
+      const result = await vehicleCollection.insertOne(data);
+      res.send({
+        success: true,
+        result,
+      });
+    });
 
 
 
@@ -52,8 +63,8 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get('/', (req, res)=>{
-    res.send("server is running fine!!")
+app.get('/', (req, res) => {
+  res.send("server is running fine!!")
 })
 
 app.listen(port, () => {
