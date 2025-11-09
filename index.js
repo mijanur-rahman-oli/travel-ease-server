@@ -64,6 +64,19 @@ async function run() {
     });
 
 
+    // delete
+    app.delete("/vehicles/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await vehicleCollection.deleteOne({ _id: new ObjectId(id) });
+
+      res.send({
+        success: true,
+        result,
+      });
+    });
+
+
+
 
 
 
