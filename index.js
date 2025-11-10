@@ -76,7 +76,7 @@ async function run() {
     });
 
 
-        app.get("/latest-vehicles", async (req, res) => {
+    app.get("/latest-vehicles", async (req, res) => {
       const result = await vehicleCollection
         .find()
         .sort({ createdAt: "desc" })
@@ -89,7 +89,12 @@ async function run() {
     });
 
 
-
+    // searching
+    app.get("/search", async (req, res) => {
+      const search_text = req.query.search
+      const result = await vehicleCollection.find({ name: { $regex: search_text, $options: "i" } }).toArray()
+      res.send(result)
+    })
 
 
 
