@@ -89,12 +89,21 @@ async function run() {
     });
 
 
-    // searching
+    // Search
     app.get("/search", async (req, res) => {
-      const search_text = req.query.search
-      const result = await vehicleCollection.find({ name: { $regex: search_text, $options: "i" } }).toArray()
-      res.send(result)
-    })
+      try {
+        const search_text = req.query.search;
+
+        if (!search_text) {
+          return res.status(400).send({ error: "Search parameter is required" });
+        }
+        const result = await vehicleCollection.find({ vehicleName: { $regex: search_text, $options: "i" } }).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Search error:", error);
+        res.status(500).send({ error: error.message });
+      }
+    });
 
 
 
