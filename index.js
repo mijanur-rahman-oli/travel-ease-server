@@ -2,12 +2,18 @@ const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
+const admin = require("firebase-admin");
 require('dotenv').config()
+const serviceAccount = require("./serviceKey.json");
 const app = express()
 const port = 3000
 
 app.use(cors())
 app.use(express.json())
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.rdbasnp.mongodb.net/?appName=Cluster0`;
@@ -21,6 +27,28 @@ const client = new MongoClient(uri, {
   }
 });
 
+const verifyToken = async (req, res, next) => {
+  const authorization = req.headers.authorization;
+
+  if (!authorization) {
+    return res.status(401).send({
+      message: "unauthorized access. Token not found!",
+    });
+  }
+
+  const token = authorization.split(" ")[1];
+  try {
+    await admin.auth().verifyIdToken(token);
+
+    next();
+  } catch (error) {
+    res.status(401).send({
+      message: "unauthorized access.",
+    });
+  }
+};
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -28,6 +56,7 @@ async function run() {
 
     const db = client.db('travelEase')
     const vehicleCollection = db.collection('vehicles')
+    const bookingCollection = db.collection('bookings')
 
 
     // get
@@ -37,7 +66,7 @@ async function run() {
     });
 
 
-    app.get("/vehicles/:id", async (req, res) => {
+    app.get("/vehicles/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const objectId = new ObjectId(id);
       const result = await vehicleCollection.findOne({ _id: objectId });
@@ -98,12 +127,12 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my-vehicles", async (req, res) => {
+    app.get("/my-vehicles", verifyToken, async (req, res) => {
       const email = req.query.email
       const result = await vehicleCollection.find({ userEmail: email }).toArray()
       res.send({
         success: true,
-        vehicles: result 
+        vehicles: result
       })
     })
 
@@ -125,13 +154,16 @@ async function run() {
 
 
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
+
+    
+
+  // Send a ping to confirm a successful connection
+  await client.db("admin").command({ ping: 1 });
+  console.log("Pinged your deployment. You successfully connected to MongoDB!");
+} finally {
+  // Ensures that the client will close when you finish/error
+  // await client.close();
+}
 }
 run().catch(console.dir);
 
