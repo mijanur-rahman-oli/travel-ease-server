@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
 const port = 3000
@@ -35,6 +36,17 @@ async function run() {
       res.send(result);
     });
 
+
+    app.get("/vehicles/:id", async (req, res) => {
+      const { id } = req.params;
+      const objectId = new ObjectId(id);
+      const result = await vehicleCollection.findOne({ _id: objectId });
+      res.send({
+        success: true,
+        result,
+      });
+    });
+
     // post
     app.post("/vehicles", async (req, res) => {
       const data = req.body;
@@ -67,6 +79,7 @@ async function run() {
     // delete
     app.delete("/vehicles/:id", async (req, res) => {
       const { id } = req.params;
+      console.log(id)
       const result = await vehicleCollection.deleteOne({ _id: new ObjectId(id) });
 
       res.send({
@@ -82,12 +95,17 @@ async function run() {
         .sort({ createdAt: "desc" })
         .limit(6)
         .toArray();
-
-      console.log(result);
-
       res.send(result);
     });
 
+    app.get("/my-vehicles", async (req, res) => {
+      const email = req.query.email
+      const result = await vehicleCollection.find({ userEmail: email }).toArray()
+      res.send({
+        success: true,
+        vehicles: result 
+      })
+    })
 
     // Search
     app.get("/search", async (req, res) => {
