@@ -51,13 +51,12 @@ const verifyToken = async (req, res, next) => {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
     const db = client.db('travelEase')
     const vehicleCollection = db.collection('vehicles')
     const bookingCollection = db.collection('bookings')
-    
+
     // get
     app.get("/vehicles", async (req, res) => {
       const result = await vehicleCollection.find().toArray();
@@ -85,7 +84,7 @@ async function run() {
     });
 
     // Update
-    app.put("/vehicles/:id", async (req, res) => {
+    app.put("/vehicles/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const data = req.body;
       const objectId = new ObjectId(id);
@@ -114,7 +113,7 @@ async function run() {
       });
     });
 
-  
+
     app.get("/latest-vehicles", async (req, res) => {
       const result = await vehicleCollection
         .find()
@@ -150,14 +149,14 @@ async function run() {
       }
     });
 
-    
+
     // booking
     app.post("/bookings", verifyToken, async (req, res) => {
       try {
         const bookingData = req.body;
         bookingData.createdAt = new Date();
         const result = await bookingCollection.insertOne(bookingData);
-        
+
         res.send({
           success: true,
           insertedId: result.insertedId,
@@ -175,16 +174,16 @@ async function run() {
     app.get("/my-bookings", verifyToken, async (req, res) => {
       try {
         const email = req.query.email;
-        
+
         if (!email) {
           return res.status(400).send({ error: "Email parameter is required" });
         }
-        
+
         const result = await bookingCollection
           .find({ bookedBy: email })
           .sort({ createdAt: -1 })
           .toArray();
-        
+
         res.send({
           success: true,
           bookings: result
@@ -201,7 +200,7 @@ async function run() {
           .find()
           .sort({ createdAt: -1 })
           .toArray();
-        
+
         res.send({
           success: true,
           bookings: result
@@ -217,11 +216,11 @@ async function run() {
       try {
         const { id } = req.params;
         const { status } = req.body;
-        
+
         const objectId = new ObjectId(id);
         const filter = { _id: objectId };
         const update = {
-          $set: { 
+          $set: {
             status,
             updatedAt: new Date()
           },
@@ -258,7 +257,6 @@ async function run() {
     });
 
 
-    // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
