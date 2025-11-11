@@ -57,14 +57,12 @@ async function run() {
     const db = client.db('travelEase')
     const vehicleCollection = db.collection('vehicles')
     const bookingCollection = db.collection('bookings')
-
-
+    
     // get
     app.get("/vehicles", async (req, res) => {
       const result = await vehicleCollection.find().toArray();
       res.send(result);
     });
-
 
     app.get("/vehicles/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
@@ -76,7 +74,7 @@ async function run() {
       });
     });
 
-    // post
+    // post 
     app.post("/vehicles", async (req, res) => {
       const data = req.body;
       const result = await vehicleCollection.insertOne(data);
@@ -104,7 +102,6 @@ async function run() {
       });
     });
 
-
     // delete
     app.delete("/vehicles/:id", async (req, res) => {
       const { id } = req.params;
@@ -117,7 +114,7 @@ async function run() {
       });
     });
 
-
+  
     app.get("/latest-vehicles", async (req, res) => {
       const result = await vehicleCollection
         .find()
@@ -126,6 +123,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
 
     app.get("/my-vehicles", verifyToken, async (req, res) => {
       const email = req.query.email
@@ -152,18 +150,121 @@ async function run() {
       }
     });
 
-
-
-
     
+    // booking
+    app.post("/bookings", verifyToken, async (req, res) => {
+      try {
+        const bookingData = req.body;
+        bookingData.createdAt = new Date();
+        const result = await bookingCollection.insertOne(bookingData);
+        
+        res.send({
+          success: true,
+          insertedId: result.insertedId,
+          message: "Booking created successfully"
+        });
+      } catch (error) {
+        console.error("Booking error:", error);
+        res.status(500).send({
+          success: false,
+          error: error.message
+        });
+      }
+    });
 
-  // Send a ping to confirm a successful connection
-  await client.db("admin").command({ ping: 1 });
-  console.log("Pinged your deployment. You successfully connected to MongoDB!");
-} finally {
-  // Ensures that the client will close when you finish/error
-  // await client.close();
-}
+    app.get("/my-bookings", verifyToken, async (req, res) => {
+      try {
+        const email = req.query.email;
+        
+        if (!email) {
+          return res.status(400).send({ error: "Email parameter is required" });
+        }
+        
+        const result = await bookingCollection
+          .find({ bookedBy: email })
+          .sort({ createdAt: -1 })
+          .toArray();
+        
+        res.send({
+          success: true,
+          bookings: result
+        });
+      } catch (error) {
+        console.error("Fetch bookings error:", error);
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+    app.get("/bookings", verifyToken, async (req, res) => {
+      try {
+        const result = await bookingCollection
+          .find()
+          .sort({ createdAt: -1 })
+          .toArray();
+        
+        res.send({
+          success: true,
+          bookings: result
+        });
+      } catch (error) {
+        console.error("Fetch all bookings error:", error);
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+    // Update booking
+    app.patch("/bookings/:id", verifyToken, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        const objectId = new ObjectId(id);
+        const filter = { _id: objectId };
+        const update = {
+          $set: { 
+            status,
+            updatedAt: new Date()
+          },
+        };
+
+        const result = await bookingCollection.updateOne(filter, update);
+
+        res.send({
+          success: true,
+          result,
+          message: "Booking status updated successfully"
+        });
+      } catch (error) {
+        console.error("Update booking error:", error);
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+    // Delete booking
+    app.delete("/bookings/:id", verifyToken, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const result = await bookingCollection.deleteOne({ _id: new ObjectId(id) });
+
+        res.send({
+          success: true,
+          result,
+          message: "Booking deleted successfully"
+        });
+      } catch (error) {
+        console.error("Delete booking error:", error);
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+
+    // Send a ping to confirm a successful connection
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    // Ensures that the client will close when you finish/error
+    // await client.close();
+  }
 }
 run().catch(console.dir);
 
