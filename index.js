@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
 const admin = require("firebase-admin");
 require('dotenv').config()
-const serviceAccount = require("./serviceKey.json");
+const serviceAccount = require("./serviceAppKey.json");
 const app = express()
 const port = 3000
 
